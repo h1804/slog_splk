@@ -7,7 +7,7 @@ $downloadDir = "C:\Temp\SplunkInstall"
 $installerPath = Join-Path -Path $downloadDir -ChildPath $installerFile
 
 # Splunk Configuration
-$splunkServerIP = "10.10.10.220"
+$splunkServerIP = "X.X.X.X"
 $deploymentServerPort = 8089     # Management Port for Deployment Client
 $indexerOutputPort = 9997      # Indexer Receiving Port
 $deploymentServer = "$splunkServerIP:$deploymentServerPort"
@@ -144,3 +144,4 @@ catch {
 
 
 Write-Host "`nScript execution finished. Remember the new admin password!"
+
