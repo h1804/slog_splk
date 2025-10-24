@@ -1,0 +1,5 @@
+# Rsyslog internal diagnostics 
+# /etc/rsyslog.d/00-rsyslog-internal.conf 
+syslog.err;syslog.warning    /var/log/Rsyslog_Error.log
+syslog.info;syslog.notice;syslog.debug    /var/log/Rsyslog_run.log
+& stop

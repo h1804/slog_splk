@@ -1,0 +1,35 @@
+1. Parse /var/log/cisco and /var/log/nas directories
+
+Since your config writes logs per-host, the directories themselves tell you who has sent logs:
+
+ls -1 /var/log/cisco
+ls -1 /var/log/nas
+
+
+Each subdirectory name will match the hostname of devices that have sent at least one log.
+
+2. Check active senders via journalctl (rsyslog service logs)
+journalctl -u rsyslog | grep "from"
+
+
+Often rsyslog logs a line like “imudp: message from 10.x.x.x”. Useful for live troubleshooting.
+
+3. Check current connections to TCP listeners (514/6514)
+
+For TCP-based senders (not UDP):
+
+ss -tnp | grep ":514\|:6514"
+
+
+This shows established TCP sessions to your syslog server → you’ll see remote IPs of devices actively connected.
+
+4. Check recent senders from log files (best for UDP too)
+
+Since UDP doesn’t maintain a session, you can scan the logs for the last N minutes to see unique senders:
+
+awk '{print $1}' /var/log/cisco/*/*.log 2>/dev/null | sort | uniq -c | sort -nr | head
+
+
+Or, to simply list unique host directories that wrote in the last 10 minutes:
+
+find /var/log/cisco -type f -mmin -10 -printf "%h\n" | sort -u

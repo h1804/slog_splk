@@ -1,0 +1,100 @@
+---
+- name: Configure RHEL 6 for Rsyslog Forwarding to Central Collector
+  hosts: rhel6_servers # Change this group name to match your Ansible inventory
+  become: yes
+  vars:
+    log_server_ip: "1.1.1.220"
+    log_server_port: "514"
+    config_file: "/etc/rsyslog.conf"
+    logreader_user: "logreader"
+    rsyslog_config_content: |
+      # --- START Custom Diagnostics and Forwarding ---
+      # Log rsyslog internal errors/warnings locally and stop processing
+      syslog.err;syslog.warning    /var/log/Rsyslog_Error.log
+      & stop
+
+      # Log rsyslog informational/debug messages locally and stop processing
+      syslog.info;syslog.notice;syslog.debug    /var/log/Rsyslog_run.log
+      & stop
+      # --- END Custom Diagnostics ---
+      
+      # Forward all logs via UDP to the central log server
+      *.* @{{ log_server_ip }}:{{ log_server_port }}
+
+  tasks:
+    - name: 1. Ensure rsyslog and required packages (acl) are installed
+      yum:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - rsyslog
+        - acl
+
+    - name: 2. Backup original rsyslog.conf
+      copy:
+        src: "{{ config_file }}"
+        dest: "{{ config_file }}.bak-{{ ansible_date_time.date }}"
+        remote_src: yes
+        force: no # Only create backup if the destination doesn't exist
+
+    - name: 3. Append custom diagnostics and forwarding rules to rsyslog.conf
+      blockinfile:
+        path: "{{ config_file }}"
+        block: "{{ rsyslog_config_content }}"
+        insertafter: EOF
+        marker: "# ANSIBLE MANAGED BLOCK - RSYSLOG FORWARDING"
+
+    - name: 4. Create 'logreader' user with nologin shell
+      user:
+        name: "{{ logreader_user }}"
+        state: present
+        system: yes
+        shell: /sbin/nologin
+        createhome: no
+
+    - name: 5. Ensure ACL package is installed (Redundant, but safe check before use)
+      yum:
+        name: acl
+        state: present
+
+    - name: 6. Set ACL for 'logreader' on /var/log (Read access for existing files/directories)
+      command: setfacl -R -m user:{{ logreader_user }}:rX /var/log/
+
+    - name: 7. Set default ACL for 'logreader' on /var/log (Read access for new files)
+      command: setfacl -R -d -m user:{{ logreader_user }}:rX /var/log/
+
+    - name: 8. Open UDP port 514 using iptables (RHEL 6 method)
+      # Note: We use 'command' module to interact directly with iptables, 
+      # which is more reliable than the 'iptables' module on very old RHEL versions.
+      command: /sbin/iptables -I INPUT 1 -p udp --dport 514 -j ACCEPT
+      changed_when: true # Always report as changed since the state is volatile
+
+    - name: 9. Save iptables rules
+      command: /sbin/service iptables save
+
+    - name: 10. Connectivity Check: Ping Central Log Collector (4 packets)
+      # The 'ping' module checks SSH connectivity. We must use the 'command' module for ICMP ping.
+      command: ping -c 4 {{ log_server_ip }}
+      register: ping_result
+      ignore_errors: yes
+      changed_when: false
+
+    - name: 11. Display ping result
+      debug:
+        msg: "Ping to {{ log_server_ip }} result: {{ ping_result.stdout | default('Not available') }}"
+
+    - name: 12. Restart rsyslog service
+      service:
+        name: rsyslog
+        state: restarted
+
+    - name: 13. Functional Test: Send log message using logger
+      command: logger -t rsyslog_bootstrap_test "RHEL6 rsyslog forwarder configured to {{ log_server_ip }}:{{ log_server_port }} at {{ ansible_date_time.iso8601 }}"
+
+    - name: 14. Display Completion Message
+      debug:
+        msg: |
+          [OK] Installation and configuration complete.
+          ----------------------------------------------------------------------
+            Verify receipt of the 'rsyslog_bootstrap_test' message on the remote collector ({{ log_server_ip }}).
+          ----------------------------------------------------------------------

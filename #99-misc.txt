@@ -1,0 +1,35 @@
+#99-misc
+
+# -------------------------------------------------------------------
+# Miscellaneous/Catch-All Configuration
+# This file processes logs that are NOT NAS (38.38.1.2 is stopped in 10-nas-only.conf).
+# -------------------------------------------------------------------
+
+# Template for Miscellaneous logs
+template(name="miscFile" type="string"
+         string="/var/log/misc/%HOSTNAME%/misc.log")
+
+# Ruleset for Miscellaneous logs
+ruleset(name="rsMisc") {
+  action(type="omfile"
+         dynaFile="miscFile"
+         DirCreateMode="0750"
+         FileCreateMode="0640"
+         FileOwner="root"
+         FileGroup="root"
+         queue.type="LinkedList"
+         queue.filename="misc"
+         queue.spoolDirectory="/var/spool/rsyslog"
+         queue.maxdiskspace="1g"
+         queue.size="20000"
+         action.resumeRetryCount="-1")
+}
+
+# The NAS traffic (38.38.1.2) is already stopped in 10-nas-only.conf.
+# Check if the IP address DOES NOT start with "1.1." (Cisco network)
+if not ($fromhost-ip startswith "1.1.") then {
+  call rsMisc
+  stop # Stop processing this message after it's logged by misc ruleset
+}
+
+

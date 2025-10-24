@@ -1,0 +1,49 @@
+# Check deployment server configuration
+$SPLUNK_HOME/bin/splunk show deploy-poll
+
+# Set or update the deployment server
+$SPLUNK_HOME/bin/splunk set deploy-poll <deployment-server-host>:<port>
+#$SPLUNK_HOME/bin/splunk set deploy-poll ds.example.com:8089
+
+# Check deployment client logs look for Connecting refused or SSL 
+tail -f $SPLUNK_HOME/var/log/splunk/splunkd.log | grep -i "DeploymentClient"
+
+# View outputs.conf settings
+cat $SPLUNK_HOME/etc/system/local/outputs.conf
+
+# Check for errors in splunkd.log
+tail -f $SPLUNK_HOME/var/log/splunk/splunkd.log | grep -i "TcpOutputProc"
+
+# Check the forwarder’s internal metrics
+$SPLUNK_HOME/bin/splunk list forward-server
+
+Key Files for troubleshooting
+$SPLUNK_HOME/var/log/splunk/splunkd.log
+$SPLUNK_HOME/var/log/splunk/metrics.log
+$SPLUNK_HOME/var/log/splunk/splunkd_stderr.log
+
+# List active inputs
+$SPLUNK_HOME/bin/splunk list monitor
+
+# Check throughput metrics
+grep -i "group=tcpout" $SPLUNK_HOME/var/log/splunk/metrics.log
+
+# Validate configuration files
+$SPLUNK_HOME/bin/splunk btool check
+
+# Debug outputs.conf
+$SPLUNK_HOME/bin/splunk btool outputs list --debug
+
+# Debug inputs.conf
+$SPLUNK_HOME/bin/splunk btool inputs list --debug
+
+Deployment Server Issues
+Error: DeploymentClient unable to fetch configuration
+Fix: Verify deployment server connectivity and credentials.
+Indexer Connection Issues
+Error: TcpOutputProc - Connection refused
+Fix: Check network/firewall rules and ensure the indexer is listening on port 9997.
+Data Not Forwarding
+Error: No data in Splunk index after configuration
+Fix: Verify inputs.conf and outputs.conf, ensure files exist, and check permissions.
+

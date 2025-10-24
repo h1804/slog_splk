@@ -1,0 +1,142 @@
+# Splunk Server CLI Troubleshooting Guide (v9.4.5)
+A comprehensive guide for troubleshooting Splunk Deployment Server and Indexer issues via CLI.
+
+---
+
+## 1. General Status and Health Checks
+
+### Verify Splunk Server Status
+$SPLUNK_HOME/bin/splunk status
+
+### Restart Splunk Server
+$SPLUNK_HOME/bin/splunk restart
+
+### Check Splunk Version
+$SPLUNK_HOME/bin/splunk version
+
+---
+
+## 2. Deployment Server Troubleshooting
+
+### Verify Deployment Server Settings
+$SPLUNK_HOME/bin/splunk show deploy-server
+
+Enable Deployment Server (if not enabled):
+$SPLUNK_HOME/bin/splunk enable deploy-server
+
+### Check Deployment Server Logs
+tail -f $SPLUNK_HOME/var/log/splunk/splunkd.log | grep -i "DeploymentServer"
+
+### Verify Deployment Apps
+ls $SPLUNK_HOME/etc/deployment-apps
+
+### Monitor Deployment Server Activity
+$SPLUNK_HOME/bin/splunk list deploy-clients
+
+### Force Deployment Configuration Reload
+$SPLUNK_HOME/bin/splunk reload deploy-server
+
+---
+
+## 3. Indexer Troubleshooting
+
+### Verify Indexer Status
+$SPLUNK_HOME/bin/splunk status
+
+### Check Indexer Logs
+tail -f $SPLUNK_HOME/var/log/splunk/splunkd.log | grep -i index
+
+### Monitor Indexer Data Throughput
+grep -i "group=index_throughput" $SPLUNK_HOME/var/log/splunk/metrics.log
+
+### Check Indexer Disk Space
+df -h $SPLUNK_HOME
+
+---
+
+## 4. Network Connectivity Checks
+
+### Test Ports
+telnet <deployment-server-host> 8089
+telnet <indexer-host> 9997
+nc -zv <target-host> <port>
+
+### Check Firewall Rules
+sudo iptables -L -n
+
+---
+
+## 5. Data Forwarding Issues
+
+### Check Forwarder Connectivity
+$SPLUNK_HOME/bin/splunk list forward-server
+
+### Verify Data Inputs on the Indexer
+cat $SPLUNK_HOME/etc/system/local/inputs.conf
+
+Example:
+[splunktcp://9997]
+disabled = false
+
+### Check Data Volume
+$SPLUNK_HOME/bin/splunk show kvstore-status
+
+---
+
+## 6. Configuration Debugging
+
+### Validate Configuration Files
+$SPLUNK_HOME/bin/splunk btool check
+
+### Debug Specific Configurations
+$SPLUNK_HOME/bin/splunk btool inputs list --debug
+$SPLUNK_HOME/bin/splunk btool outputs list --debug
+
+### Check Effective Configuration
+$SPLUNK_HOME/bin/splunk btool list --debug
+
+---
+
+## 7. SSL/TLS Issues
+
+### Verify SSL Certificates
+openssl x509 -in $SPLUNK_HOME/etc/auth/mycert.pem -noout -text
+
+Check server.conf:
+cat $SPLUNK_HOME/etc/system/local/server.conf
+
+Example:
+[sslConfig]
+enableSplunkdSSL = true
+serverCert = $SPLUNK_HOME/etc/auth/mycert.pem
+sslPassword = <password>
+
+### Check SSL Errors
+tail -f $SPLUNK_HOME/var/log/splunk/splunkd.log | grep -i ssl
+
+---
+
+## 8. Monitoring and Diagnostics
+
+### Monitor System Resource Usage
+top
+df -h
+
+### Run a Diagnostic Report
+$SPLUNK_HOME/bin/splunk diag
+
+---
+
+## 9. Common Issues and Fixes
+
+| Issue                        | CLI Commands / Fixes                                                                 |
+|------------------------------|-------------------------------------------------------------------------------------|
+| Deployment Server not working | Verify `deploy-poll`, restart Deployment Server, and check `splunkd.log`.           |
+| Forwarders not connecting     | Check `outputs.conf`, network connectivity, and `list forward-server`.              |
+| Indexer not receiving data    | Verify listener settings in `inputs.conf` and check `metrics.log`.                  |
+| High resource usage           | Monitor system usage (`top`, `df -h`), and scale resources (CPU, memory, storage).  |
+| SSL handshake failure         | Validate SSL certificates and check `server.conf` and `splunkd.log`.                |
+
+---
+
+This guide provides a solid foundation for resolving common Deployment Server and Indexer issues using the Splunk CLI. If problems persist, collect logs and escalate to Splunk Support.

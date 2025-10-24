@@ -1,0 +1,4 @@
+# 90-custom.conf - Direct all incoming system logs (*.*) to the new centralized file.
+*.* action(type="omfile"
+           File="/opt/data/syslog/all.log"
+           Template="RSYSLOG_TraditionalFileFormat")
