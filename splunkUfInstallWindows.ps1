@@ -47,14 +47,14 @@ $msiArgs = @(
 try {
     Start-Process -FilePath "msiexec.exe" -ArgumentList $msiArgs -Wait -NoNewWindow
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "✅ Installation complete. UF configured for DS $deploymentServer and Indexer $indexerOutput."
+        Write-Host " Installation complete. UF configured for DS $deploymentServer and Indexer $indexerOutput."
     } else {
-        Write-Host "❌ Installation failed. MSI exit code: $LASTEXITCODE" -ForegroundColor Red
+        Write-Host " Installation failed. MSI exit code: $LASTEXITCODE" -ForegroundColor Red
         exit 1
     }
 }
 catch {
-    Write-Host "❌ An error occurred during the installation process: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host " An error occurred during the installation process: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 }
 
@@ -85,13 +85,13 @@ try {
         
         # We can't easily check the exit code for this specific command, 
         # so we rely on the command completing without throwing a PowerShell error.
-        Write-Host "✅ 'admin' user password successfully changed to: $newPassword"
+        Write-Host " 'admin' user password successfully changed to: $newPassword"
     } else {
-        Write-Host "❌ Splunk CLI not found at $splunkCli. Cannot change password." -ForegroundColor Red
+        Write-Host " Splunk CLI not found at $splunkCli. Cannot change password." -ForegroundColor Red
     }
 }
 catch {
-    Write-Host "❌ Error changing 'admin' password: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host " Error changing 'admin' password: $($_.Exception.Message)" -ForegroundColor Red
 }
 
 # ----------------------------------------------------------------------
@@ -133,7 +133,7 @@ try {
     if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
         Write-Host "Restarting service '$serviceName' to finalize configuration..."
         Restart-Service -Name $serviceName -Force -ErrorAction Stop
-        Write-Host "✅ Service '$serviceName' successfully restarted and running."
+        Write-Host " Service '$serviceName' successfully restarted and running."
     } else {
         Write-Host " Service '$serviceName' not found or installed incorrectly." -ForegroundColor Yellow
     }
@@ -144,4 +144,5 @@ catch {
 
 
 Write-Host "`nScript execution finished. Remember the new admin password!"
+
 
