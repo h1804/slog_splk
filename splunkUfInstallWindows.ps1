@@ -20,7 +20,7 @@ $splunkCli = Join-Path -Path $installDir -ChildPath "bin\splunk.exe"
 $adminUsername = "admin"
 # NOTE: In a production environment, this password should be retrieved securely, 
 # not hardcoded in plain text.
-$newPassword = "1qaz2wsx!QAZ@WSX" 
+$newPassword = "NewPasswordHere123" 
 $defaultPassword = "changeme" # Default password for the 'admin' user after install
 
 # --- Prerequisite: Create download directory (if it doesn't exist) ---
@@ -141,5 +141,6 @@ try {
 catch {
     Write-Host " Error restarting service '$serviceName': $($_.Exception.Message)" -ForegroundColor Red
 }
+
 
 Write-Host "`nScript execution finished. Remember the new admin password!"
